@@ -1,0 +1,165 @@
+.vehicle-page {
+  padding-top: 40px;
+  padding-bottom: 100px;
+}
+
+.vehicle-page__layout {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 40px;
+  align-items: start;
+}
+
+.vehicle-page__section {
+  margin-top: 34px;
+}
+
+.vehicle-page__section h2 {
+  font-size: 17px;
+  margin-bottom: 16px;
+}
+
+.vehicle-page__features {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+
+.vehicle-page__features li {
+  font-size: 14.5px;
+  color: var(--text);
+  padding-left: 18px;
+  position: relative;
+}
+
+.vehicle-page__features li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 9px;
+  width: 8px;
+  height: 2px;
+  background: var(--text-faint);
+}
+
+.vehicle-page__panel {
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-l);
+  padding: 28px;
+  position: sticky;
+  top: 92px;
+}
+
+.vehicle-page__category {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.vehicle-page__title {
+  font-size: 26px;
+  margin-bottom: 6px;
+}
+
+.vehicle-page__class {
+  font-size: 13.5px;
+  color: var(--text-muted);
+  margin-bottom: 18px;
+}
+
+.vehicle-page__rating {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--text-muted);
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 20px;
+}
+
+.vehicle-page__rating .mono {
+  color: var(--text);
+}
+
+.vehicle-page__period {
+  display: inline-flex;
+  background: var(--bg-elevated);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-s);
+  padding: 3px;
+  margin-bottom: 14px;
+}
+
+.vehicle-page__period button {
+  background: transparent;
+  border: none;
+  padding: 7px 16px;
+  font-size: 13px;
+  color: var(--text-muted);
+  border-radius: 5px;
+}
+
+.vehicle-page__period button.is-active {
+  background: var(--white);
+  color: var(--on-white);
+}
+
+.vehicle-page__price {
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 18px;
+}
+
+.vehicle-page__book {
+  width: 100%;
+  padding: 14px;
+}
+
+.vehicle-page__book-note {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  margin-top: 10px;
+  line-height: 1.5;
+}
+
+.vehicle-page__specs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px 18px;
+  margin-top: 24px;
+  padding-top: 22px;
+  border-top: 1px solid var(--line);
+}
+
+.vehicle-page__specs dt {
+  font-size: 11.5px;
+  color: var(--text-faint);
+  margin-bottom: 3px;
+}
+
+.vehicle-page__specs dd {
+  font-size: 14px;
+  margin: 0;
+}
+
+.vehicle-page__back {
+  display: block;
+  margin-top: 24px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.vehicle-page__back:hover {
+  color: var(--text);
+}
+
+@media (max-width: 980px) {
+  .vehicle-page__layout {
+    grid-template-columns: 1fr;
+  }
+  .vehicle-page__panel {
+    position: static;
+  }
+}

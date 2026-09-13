@@ -1,0 +1,26 @@
+.crumbs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-faint);
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+}
+
+.crumbs__item a {
+  color: var(--text-muted);
+}
+
+.crumbs__item a:hover {
+  color: var(--text);
+}
+
+.crumbs__item [aria-current='page'] {
+  color: var(--text);
+}
+
+.crumbs__sep {
+  margin-left: 8px;
+  color: var(--text-faint);
+}

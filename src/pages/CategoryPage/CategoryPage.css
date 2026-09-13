@@ -1,0 +1,31 @@
+.category-page {
+  padding-top: 40px;
+  padding-bottom: 90px;
+}
+
+.category-page__head {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  margin-bottom: 34px;
+}
+
+.category-page__icon {
+  width: 92px;
+  height: 60px;
+  background: color-mix(in srgb, var(--cat-color) 18%, var(--bg-elevated));
+  border: 1px solid var(--line);
+  border-radius: var(--radius-m);
+  padding: 8px;
+  flex-shrink: 0;
+}
+
+.category-page__head h1 {
+  font-size: 28px;
+  margin-bottom: 6px;
+}
+
+.category-page__head p {
+  color: var(--text-muted);
+  font-size: 14px;
+}

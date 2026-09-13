@@ -1,0 +1,37 @@
+.stages {
+  display: flex;
+  flex-direction: column;
+}
+
+.stages__row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.stages__row:last-child {
+  border-bottom: none;
+}
+
+.stages__index {
+  font-size: 12px;
+  color: var(--text-faint);
+  width: 20px;
+}
+
+.stages__name {
+  flex: 1;
+  font-size: 14.5px;
+}
+
+.stages__price {
+  font-size: 14.5px;
+  color: var(--text);
+}
+
+.stages-empty {
+  font-size: 13.5px;
+  color: var(--text-muted);
+}

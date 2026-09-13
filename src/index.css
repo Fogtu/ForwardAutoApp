@@ -1,0 +1,160 @@
+/* ============================================================
+   FORWARD AUTO RENT — дизайн-токены
+   Тёмный, почти монохромный интерфейс вслед за логотипом:
+   графитовый фон, светлый текст, белые кнопки как единственный
+   "громкий" элемент. Цвет включается только там, где он что-то
+   значит — метка категории или редкость машины.
+   ============================================================ */
+
+:root {
+  --bg: #101114;
+  --bg-soft: #16171b;
+  --bg-elevated: #1b1c21;
+  --bg-card: #1e1f25;
+  --line: rgba(242, 241, 237, 0.09);
+  --line-strong: rgba(242, 241, 237, 0.18);
+
+  /* текст */
+  --text: #f2f1ed;
+  --text-muted: #97989f;
+  --text-faint: #63646b;
+
+  /* акценты */
+  --white: #ffffff;
+  --on-white: #101114;
+  --focus: #6f9bff;
+
+  /* редкость / категории (приглушённые, со смыслом) */
+  --cat-legkovoy: #8CA3C7;
+  --cat-gruzovoy: #B08A5A;
+  --cat-obshestvenniy: #59A896;
+  --cat-moto: #C96B4A;
+  --cat-konteynery: #D3B24C;
+  --cat-sobytiya: #A184D6;
+
+  /* тип */
+  --font-display: 'Manrope', 'Arial', sans-serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'SFMono-Regular', monospace;
+
+  --radius-s: 6px;
+  --radius-m: 12px;
+  --radius-l: 20px;
+  --container: 1180px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  background-image: radial-gradient(ellipse 1200px 700px at 50% -10%, rgba(242, 241, 237, 0.05), transparent 60%);
+  background-attachment: fixed;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  margin: 0;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  font-weight: 700;
+}
+
+p {
+  margin: 0;
+}
+
+button {
+  font-family: var(--font-body);
+  cursor: pointer;
+}
+
+input, select {
+  font-family: var(--font-body);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+img, svg {
+  display: block;
+  max-width: 100%;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.container {
+  max-width: var(--container);
+  margin: 0 auto;
+  padding: 0 28px;
+}
+
+.mono {
+  font-family: var(--font-mono);
+}
+
+/* переиспользуемые кнопки */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 13px 22px;
+  border-radius: var(--radius-s);
+  border: 1px solid transparent;
+  font-weight: 600;
+  font-size: 14.5px;
+  transition: transform 120ms ease, background 120ms ease, border-color 120ms ease, opacity 120ms ease;
+  white-space: nowrap;
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn-primary {
+  background: var(--white);
+  color: var(--on-white);
+}
+
+.btn-primary:hover {
+  opacity: 0.88;
+}
+
+.btn-outline {
+  background: transparent;
+  border-color: var(--line-strong);
+  color: var(--text);
+}
+
+.btn-outline:hover {
+  border-color: var(--text);
+}
+
+@media (max-width: 720px) {
+  .container {
+    padding: 0 18px;
+  }
+}

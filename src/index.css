@@ -41,6 +41,7 @@
   --radius-m: 12px;
   --radius-l: 20px;
   --container: 1180px;
+  --crumbs-block-height: 76px;
 }
 
 * {
@@ -156,5 +157,36 @@ img, svg {
 @media (max-width: 720px) {
   .container {
     padding: 0 18px;
+  }
+}
+
+/* ============================================================
+   Skeleton-заглушки на время загрузки данных из БД —
+   переиспользуются по всему сайту (карточки, таблицы, формы)
+   ============================================================ */
+.skeleton-shimmer {
+  background: linear-gradient(
+    100deg,
+    var(--bg-elevated) 30%,
+    color-mix(in srgb, var(--line-strong) 55%, var(--bg-elevated)) 50%,
+    var(--bg-elevated) 70%
+  );
+  background-size: 220% 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+  border-radius: 4px;
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 140% 0;
+  }
+  100% {
+    background-position: -60% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-shimmer {
+    animation: none;
   }
 }

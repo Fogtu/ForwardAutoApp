@@ -22,13 +22,16 @@
 }
 
 .stages__name {
-  flex: 1;
   font-size: 14.5px;
+  font-weight: 600;
+  width: 130px;
+  flex-shrink: 0;
 }
 
-.stages__price {
-  font-size: 14.5px;
-  color: var(--text);
+.stages__desc {
+  flex: 1;
+  font-size: 12.5px;
+  color: var(--text-muted);
 }
 
 .stages-empty {

@@ -1,0 +1,75 @@
+.skeleton-vcard {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-m);
+  overflow: hidden;
+}
+
+.skeleton-vcard__art {
+  height: 100px;
+  margin: 20px 20px 14px;
+  border-radius: var(--radius-s);
+}
+
+.skeleton-vcard__body {
+  padding: 0 18px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.skeleton-vcard__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.skeleton-vcard__title {
+  height: 15px;
+  width: 65%;
+}
+
+.skeleton-vcard__rating {
+  height: 12px;
+  width: 34px;
+  flex-shrink: 0;
+}
+
+.skeleton-vcard__meta {
+  height: 12px;
+  width: 50%;
+}
+
+.skeleton-vcard__specs {
+  display: flex;
+  gap: 14px;
+  padding-top: 4px;
+  border-top: 1px dashed var(--line);
+}
+
+.skeleton-vcard__specs span {
+  height: 10px;
+  width: 50px;
+}
+
+.skeleton-vcard__bottom {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 8px;
+}
+
+.skeleton-vcard__price {
+  height: 16px;
+  width: 80px;
+}
+
+.skeleton-vcard__link {
+  height: 32px;
+  width: 90px;
+  border-radius: var(--radius-s);
+}

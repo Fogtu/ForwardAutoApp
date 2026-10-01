@@ -1,0 +1,107 @@
+.booking-page {
+  padding-top: 8px;
+  padding-bottom: 100px;
+}
+
+/* Компенсируем отсутствие Breadcrumbs на время загрузки — та же
+   логика, что в CategoryPage.css и VehiclePage.css, чтобы скелетон не
+   был "приклеен" к хедеру. */
+.booking-page__loading {
+  margin-top: var(--crumbs-block-height, 76px);
+}
+
+.booking-page__layout {
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+.booking-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-l);
+  padding: 32px;
+}
+
+.booking-form h1 {
+  font-size: 24px;
+}
+
+.booking-form__vehicle {
+  color: var(--text-muted);
+  font-size: 14px;
+  margin-top: -8px;
+}
+
+.booking-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13.5px;
+  color: var(--text-muted);
+}
+
+.booking-form__field input {
+  background: var(--bg-elevated);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-s);
+  padding: 12px 14px;
+  color: var(--text);
+  font-size: 14px;
+}
+
+.booking-form__dates {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.booking-form__price-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.booking-form__price-breakdown span {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.booking-form__price {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.booking-form__error {
+  color: #d9736b;
+  font-size: 13.5px;
+}
+
+.booking-page__done {
+  max-width: 480px;
+  margin: 60px auto 0;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.booking-page__done h1 {
+  font-size: 26px;
+}
+
+.booking-page__done p {
+  color: var(--text-muted);
+  font-size: 14.5px;
+  line-height: 1.6;
+}
+
+
+.booking-form__deposit {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}

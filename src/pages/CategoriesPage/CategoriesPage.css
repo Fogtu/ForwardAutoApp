@@ -31,12 +31,13 @@
 }
 
 .categories-section {
-  padding: 64px 28px 90px;
+  padding: 80px 28px 90px;
 }
 
 .categories-section__title {
   font-size: 26px;
-  margin-bottom: 26px;
+  margin-top: 34px;
+  margin-bottom: 30px;
 }
 
 .categories-grid {

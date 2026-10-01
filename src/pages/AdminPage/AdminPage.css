@@ -1,0 +1,270 @@
+.admin-login {
+  padding-top: 90px;
+  max-width: 360px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.admin-login h1 {
+  font-size: 22px;
+  margin-bottom: 24px;
+}
+
+.admin-login__form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.admin-login__form input {
+  background: var(--bg-elevated);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-s);
+  padding: 12px 14px;
+  color: var(--text);
+  font-size: 14px;
+}
+
+.admin-login__error {
+  margin-top: 14px;
+  color: #d9736b;
+  font-size: 13.5px;
+}
+
+.admin-page {
+  padding-top: 40px;
+  padding-bottom: 90px;
+}
+
+.admin-page__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.admin-page__head h1 {
+  font-size: 24px;
+}
+
+.admin-page__tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 26px;
+  border-bottom: 1px solid var(--line);
+}
+
+.admin-page__tab {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  padding: 10px 16px;
+  font-size: 14px;
+  border-bottom: 2px solid transparent;
+}
+
+.admin-page__tab.is-active {
+  color: var(--text);
+  border-bottom-color: var(--text);
+}
+
+.admin-section {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.admin-form {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-m);
+  padding: 20px;
+}
+
+.admin-form--wide {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.admin-form input,
+.admin-form select,
+.admin-form textarea {
+  background: var(--bg-elevated);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-s);
+  padding: 10px 12px;
+  color: var(--text);
+  font-size: 13.5px;
+  width: 100%;
+}
+
+.admin-form textarea {
+  grid-column: span 2;
+  min-height: 70px;
+  resize: vertical;
+  font-family: var(--font-body);
+}
+
+.admin-form input[type='color'] {
+  padding: 4px;
+  height: 40px;
+}
+
+.admin-stages {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-s);
+  padding: 12px 14px;
+}
+
+.admin-stages legend {
+  font-size: 12px;
+  color: var(--text-muted);
+  padding: 0 6px;
+}
+
+.admin-stages label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13.5px;
+}
+
+.admin-form__actions {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 10px;
+}
+
+.admin-error {
+  color: #d9736b;
+  font-size: 13.5px;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-m);
+  overflow: hidden;
+}
+
+.admin-table th,
+.admin-table td {
+  padding: 12px 14px;
+  text-align: left;
+  font-size: 13.5px;
+  border-bottom: 1px solid var(--line);
+}
+
+.admin-table th {
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.admin-table tr:last-child td {
+  border-bottom: none;
+}
+
+.admin-table select {
+  background: var(--bg-elevated);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-s);
+  color: var(--text);
+  padding: 6px 8px;
+  font-size: 13px;
+}
+
+.admin-table .btn {
+  padding: 6px 10px;
+  font-size: 12.5px;
+  margin-right: 6px;
+}
+
+@media (max-width: 900px) {
+  .admin-form,
+  .admin-form--wide {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+
+
+/* Добавить в конец существующего src/pages/AdminPage/AdminPage.css */
+
+.admin-stages__count {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-right: 20px;
+}
+
+.admin-stages__slots {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.admin-stages__slot-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.admin-stages__slot-label select {
+  background: var(--bg-elevated);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-s);
+  color: var(--text);
+  padding: 6px 8px;
+  font-size: 13px;
+}
+
+/* Добавить в конец существующего src/pages/AdminPage/AdminPage.css */
+
+.admin-price-tiers {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+}
+
+.admin-price-tiers__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.admin-price-tiers__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr auto;
+  gap: 8px;
+}
+
+.admin-price-tiers__row input {
+  background: var(--bg-elevated);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-s);
+  padding: 8px 10px;
+  color: var(--text);
+  font-size: 13px;
+}
+
+@media (max-width: 900px) {
+  .admin-price-tiers__row {
+    grid-template-columns: 1fr 1fr;
+  }
+}

@@ -15,6 +15,12 @@
   transition: transform 220ms ease;
 }
 
+.gallery__photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .gallery__tag {
   position: absolute;
   bottom: 16px;
@@ -43,6 +49,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
   transition: border-color 120ms ease;
 }
 
@@ -56,4 +63,11 @@
 
 .gallery__thumb-svg {
   width: 100%;
+}
+
+.gallery__thumb-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 4px;
 }

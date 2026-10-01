@@ -28,7 +28,7 @@ export default function FilterPanel({ filters, setFilters, priceBounds, resultCo
 
       <div className="filter-bar__price">
         <span className="filter-bar__price-label mono">
-          {priceMin.toLocaleString('ru-RU')}–{priceMax.toLocaleString('ru-RU')} $
+          {priceMin.toLocaleString('ru-RU')}–{priceMax.toLocaleString('ru-RU')} ₽
         </span>
         <div className="filter-bar__range">
           <input

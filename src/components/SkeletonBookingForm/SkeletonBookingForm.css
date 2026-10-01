@@ -1,0 +1,54 @@
+.skeleton-booking {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-l);
+  padding: 32px;
+}
+
+.skeleton-booking__title {
+  height: 26px;
+  width: 55%;
+}
+
+.skeleton-booking__subtitle {
+  height: 13px;
+  width: 40%;
+  margin-top: -8px;
+}
+
+.skeleton-booking__field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.skeleton-booking__field-label {
+  height: 11px;
+  width: 90px;
+}
+
+.skeleton-booking__field-input {
+  height: 44px;
+  width: 100%;
+  border-radius: var(--radius-s);
+}
+
+.skeleton-booking__period {
+  height: 38px;
+  width: 160px;
+  border-radius: var(--radius-s);
+}
+
+.skeleton-booking__price {
+  height: 24px;
+  width: 120px;
+}
+
+.skeleton-booking__button {
+  height: 46px;
+  width: 100%;
+  border-radius: var(--radius-s);
+}

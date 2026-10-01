@@ -1,6 +1,13 @@
 .category-page {
-  padding-top: 40px;
+  padding-top: 8px;
   padding-bottom: 90px;
+}
+
+/* У реальной страницы отступ от хедера даёт Breadcrumbs (margin-top: 28px),
+   но в состоянии загрузки крошек ещё нет — добавляем тот же отступ вручную,
+   чтобы скелетон не был "приклеен" к хедеру. */
+.category-page__loading {
+  margin-top: var(--crumbs-block-height, 76px);
 }
 
 .category-page__head {
@@ -28,4 +35,27 @@
 .category-page__head p {
   color: var(--text-muted);
   font-size: 14px;
+}
+
+.skeleton-category-icon {
+  width: 92px;
+  height: 60px;
+  border-radius: var(--radius-m);
+  flex-shrink: 0;
+}
+
+.skeleton-category-text {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.skeleton-category-title {
+  height: 22px;
+  width: 220px;
+}
+
+.skeleton-category-desc {
+  height: 13px;
+  width: 320px;
 }

@@ -104,3 +104,13 @@
   border-color: var(--text);
   color: var(--text);
 }
+
+.v-card__art:has(.v-card__photo) {
+  padding: 0;
+}
+
+.v-card__photo {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+}

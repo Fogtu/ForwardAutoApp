@@ -30,6 +30,10 @@
   color: var(--text);
 }
 
+.header__nav a.is-active {
+  color: var(--text);
+}
+
 .header__server {
   font-size: 11px;
   letter-spacing: 0.14em;

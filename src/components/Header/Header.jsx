@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { NavLink, Link } from 'react-router-dom'
 import Logo from '../Logo/Logo.jsx'
 import './Header.css'
 
@@ -11,9 +11,12 @@ export default function Header() {
         </Link>
 
         <nav className="header__nav">
-          <Link to="/">Категории</Link>
-          <a href="#" onClick={(e) => e.preventDefault()}>Правила сервера</a>
-          <a href="#" onClick={(e) => e.preventDefault()}>Поддержка</a>
+          <NavLink to="/" end className={({ isActive }) => (isActive ? 'is-active' : '')}>
+            Категории
+          </NavLink>
+          <NavLink to="/rules" className={({ isActive }) => (isActive ? 'is-active' : '')}>
+            Правила
+          </NavLink>
         </nav>
 
         <span className="header__server mono">MTA PROVINCE #6</span>

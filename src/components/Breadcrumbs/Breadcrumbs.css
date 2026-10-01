@@ -4,6 +4,7 @@
   gap: 8px;
   font-size: 13px;
   color: var(--text-faint);
+  margin-top: 28px;
   margin-bottom: 28px;
   flex-wrap: wrap;
 }

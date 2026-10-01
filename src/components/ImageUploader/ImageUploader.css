@@ -1,0 +1,79 @@
+.image-uploader__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 10px;
+}
+
+.image-uploader__thumb {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  border-radius: var(--radius-s);
+  overflow: hidden;
+  border: 1px solid var(--line-strong);
+}
+
+.image-uploader__thumb.is-cover {
+  border-color: var(--text);
+}
+
+.image-uploader__thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.image-uploader__badge {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  background: var(--white);
+  color: var(--on-white);
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 6px;
+  border-radius: 3px;
+}
+
+.image-uploader__actions {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: flex;
+  gap: 4px;
+}
+
+.image-uploader__actions button {
+  background: rgba(16, 17, 20, 0.75);
+  color: var(--text);
+  border: none;
+  border-radius: 3px;
+  width: 22px;
+  height: 22px;
+  font-size: 13px;
+  line-height: 1;
+}
+
+.image-uploader__add {
+  aspect-ratio: 16 / 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--text-muted);
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-s);
+  cursor: pointer;
+  padding: 6px;
+}
+
+.image-uploader__add:hover {
+  border-color: var(--text);
+  color: var(--text);
+}
+
+.image-uploader__error {
+  margin-top: 8px;
+  color: #d9736b;
+  font-size: 13px;
+}

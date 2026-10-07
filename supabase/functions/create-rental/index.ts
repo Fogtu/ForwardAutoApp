@@ -1,9 +1,8 @@
 // supabase/functions/create-rental/index.ts
 // Публичная точка приёма заявок на аренду (без токена — доступна всем
-// посетителям сайта). Проверяет антиспам по IP, проверяет что машина
-// не занята другой активной арендой, и сама считает итоговую цену по
-// датам и тарифам машины (vehicle_price_tiers) — цене из браузера не
-// доверяет.
+// посетителям сайта). Проверяет входные данные, антиспам по IP, атомарно
+// занимает машину и сама считает итоговую цену по датам и тарифам машины
+// (vehicle_price_tiers) — цене из браузера не доверяет.
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
@@ -20,6 +19,12 @@ const corsHeaders = {
 // Минимальный промежуток между заявками с одного IP.
 const RATE_LIMIT_MINUTES = 10
 const MS_IN_DAY = 24 * 60 * 60 * 1000
+
+// Ограничения входных данных.
+const MAX_DAYS = 60
+const MAX_VK_LEN = 200
+const MAX_NAME_LEN = 64
+const VK_RE = /^https?:\/\/(m\.)?vk\.(com|ru)\//i
 
 const TG_TOKEN = Deno.env.get("TELEGRAM_BOT_TOKEN")
 const TG_CHAT_ID = Deno.env.get("TELEGRAM_CHAT_ID")
@@ -44,7 +49,7 @@ async function notifyTelegram(text: string) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         chat_id: TG_CHAT_ID,
-        text,
+        text: text.slice(0, 4000),
         parse_mode: "HTML",
         disable_web_page_preview: true,
       }),
@@ -70,9 +75,8 @@ function json(body: unknown, status = 200) {
 
 // Подбирает цену за сутки по количеству суток аренды среди тарифов
 // машины. Если тарифов нет, или ни один диапазон не подошёл — берём
-// обычную price_day. Если подошло несколько (диапазоны в базе не
-// обязаны быть непересекающимися) — берём тариф с наибольшим min_days,
-// как более специфичный.
+// обычную price_day. Если подошло несколько — берём тариф с наибольшим
+// min_days, как более специфичный.
 function resolvePricePerDay(days: number, tiers: any[], fallbackPriceDay: number) {
   const matched = tiers
     .filter((t) => days >= t.min_days && (t.max_days == null || days <= t.max_days))
@@ -87,10 +91,20 @@ serve(async (req) => {
   }
 
   try {
-    const { vehicleId, vkLink, gameNickname, contactName, startDate, endDate } = await req.json()
+    const body = await req.json()
+    const { vehicleId, startDate, endDate } = body
+    const vkLink = typeof body.vkLink === "string" ? body.vkLink.trim() : ""
+    const gameNickname = typeof body.gameNickname === "string" ? body.gameNickname.trim() : ""
+    const contactName = typeof body.contactName === "string" ? body.contactName.trim() : ""
 
-    if (!vehicleId || !vkLink?.trim() || !gameNickname?.trim() || !contactName?.trim()) {
+    if (!vehicleId || !vkLink || !gameNickname || !contactName) {
       return json({ error: "Заполните все поля формы" }, 400)
+    }
+    if (vkLink.length > MAX_VK_LEN || gameNickname.length > MAX_NAME_LEN || contactName.length > MAX_NAME_LEN) {
+      return json({ error: "Слишком длинное значение в одном из полей" }, 400)
+    }
+    if (!VK_RE.test(vkLink)) {
+      return json({ error: "Укажите ссылку на профиль ВКонтакте (vk.com/...)" }, 400)
     }
 
     const start = new Date(startDate)
@@ -98,34 +112,48 @@ serve(async (req) => {
     if (isNaN(start.getTime()) || isNaN(end.getTime()) || end < start) {
       return json({ error: "Некорректный период аренды" }, 400)
     }
+
+    // Запас в сутки на часовые пояса: клиент и сервер живут в разных.
+    const todayUtc = new Date(new Date().toISOString().slice(0, 10)).getTime()
+    if (start.getTime() < todayUtc - MS_IN_DAY) {
+      return json({ error: "Дата начала не может быть в прошлом" }, 400)
+    }
+
     // Считаем сутки включительно: с 10 по 10 число — это 1 сутки, с 10 по 12 — 3.
     const days = Math.max(1, Math.round((end.getTime() - start.getTime()) / MS_IN_DAY) + 1)
+    if (days > MAX_DAYS) {
+      return json({ error: `Максимальный срок аренды — ${MAX_DAYS} суток` }, 400)
+    }
 
     const clientIp = getClientIp(req)
 
     // --- Антиспам: не больше одной заявки с одного IP за N минут ---
-    const since = new Date(Date.now() - RATE_LIMIT_MINUTES * 60 * 1000).toISOString()
-    const { data: recent, error: recentError } = await supabase
-      .from("rentals")
-      .select("id")
-      .eq("client_ip", clientIp)
-      .gte("created_at", since)
-      .limit(1)
+    // Если IP определить не удалось, лимит не применяем: иначе все
+    // такие посетители делили бы один общий лимит "unknown".
+    if (clientIp !== "unknown") {
+      const since = new Date(Date.now() - RATE_LIMIT_MINUTES * 60 * 1000).toISOString()
+      const { data: recent, error: recentError } = await supabase
+        .from("rentals")
+        .select("id")
+        .eq("client_ip", clientIp)
+        .gte("created_at", since)
+        .limit(1)
 
-    if (recentError) throw recentError
-    if (recent && recent.length > 0) {
-      return json(
-        { error: "Вы уже отправляли заявку недавно. Попробуйте ещё раз через несколько минут." },
-        429
-      )
+      if (recentError) throw recentError
+      if (recent && recent.length > 0) {
+        return json(
+          { error: "Вы уже отправляли заявку недавно. Попробуйте ещё раз через несколько минут." },
+          429
+        )
+      }
     }
 
-    // --- Машина не должна быть уже занята активной арендой ---
+    // --- Машина ---
     const { data: vehicle, error: vehicleError } = await supabase
-    .from("vehicles")
-    .select("brand, model, class, location, deposit, price_day, is_rented, categories(label)")
-    .eq("id", vehicleId)
-    .maybeSingle()
+      .from("vehicles")
+      .select("brand, model, class, location, deposit, price_day, is_rented, categories(label)")
+      .eq("id", vehicleId)
+      .maybeSingle()
 
     if (vehicleError) throw vehicleError
     if (!vehicle) return json({ error: "Машина не найдена" }, 404)
@@ -133,7 +161,7 @@ serve(async (req) => {
       return json({ error: "Эта машина сейчас в аренде и временно недоступна для брони" }, 409)
     }
 
-    // --- Тарифы машины ---
+    // --- Тарифы и цена (считаем ДО того, как занимать машину) ---
     const { data: tiers, error: tiersError } = await supabase
       .from("vehicle_price_tiers")
       .select("min_days, max_days, price_per_day")
@@ -144,13 +172,28 @@ serve(async (req) => {
     const pricePerDay = resolvePricePerDay(days, tiers || [], vehicle.price_day)
     const price = pricePerDay * days
 
+    // --- Атомарно занимаем машину ---
+    // update ... where is_rented = false выполнится только для одного из
+    // одновременных запросов, второй получит пустой результат и 409.
+    const { data: claimed, error: claimError } = await supabase
+      .from("vehicles")
+      .update({ is_rented: true })
+      .eq("id", vehicleId)
+      .eq("is_rented", false)
+      .select("id")
+
+    if (claimError) throw claimError
+    if (!claimed || claimed.length === 0) {
+      return json({ error: "Эта машина сейчас в аренде и временно недоступна для брони" }, 409)
+    }
+
     const { data, error } = await supabase
       .from("rentals")
       .insert({
         vehicle_id: vehicleId,
-        vk_link: vkLink.trim(),
-        game_nickname: gameNickname.trim(),
-        contact_name: contactName.trim(),
+        vk_link: vkLink,
+        game_nickname: gameNickname,
+        contact_name: contactName,
         start_date: start.toISOString(),
         end_date: end.toISOString(),
         price,
@@ -160,18 +203,14 @@ serve(async (req) => {
       .select()
       .single()
 
-    if (error) throw error
+    if (error) {
+      // Заявка не создалась — освобождаем машину обратно.
+      await supabase.from("vehicles").update({ is_rented: false }).eq("id", vehicleId)
+      throw error
+    }
 
-    // Помечаем машину занятой сразу после успешной заявки — до тех
-    // пор, пока админ не переведёт статус в completed/cancelled.
-    const { error: updateError } = await supabase
-      .from("vehicles")
-      .update({ is_rented: true })
-      .eq("id", vehicleId)
-    if (updateError) throw updateError
     const rub = (n: number) => `${n.toLocaleString("ru-RU")} ₽`
     const deposit = Number(vehicle.deposit ?? 0)
-    const safeVk = /^https?:\/\//i.test(vkLink.trim()) ? vkLink.trim() : ""
     const usedTier = (tiers || []).some(
       (t: any) => days >= t.min_days && (t.max_days == null || days <= t.max_days)
     )
@@ -194,16 +233,18 @@ serve(async (req) => {
         deposit > 0 ? `Залог: ${rub(deposit)} (вместе: ${rub(price + deposit)})` : "Залог: нет",
         "",
         "<b>👤 Клиент</b>",
-        `Ник: ${esc(gameNickname.trim())}`,
-        `Обращение: ${esc(contactName.trim())}`,
-        safeVk ? `ВК: <a href="${esc(safeVk)}">${esc(safeVk)}</a>` : `ВК: ${esc(vkLink.trim())}`,
+        `Ник: ${esc(gameNickname)}`,
+        `Обращение: ${esc(contactName)}`,
+        `ВК: <a href="${esc(vkLink)}">${esc(vkLink)}</a>`,
         "",
         `🕒 ${new Date().toLocaleString("ru-RU", { timeZone: "Europe/Moscow" })} (МСК)`,
         siteUrl ? `⚙️ <a href="${esc(siteUrl)}/admin">Открыть админку</a>` : "",
       ].filter((l) => l !== "").join("\n")
     )
+
     return json({ ok: true, rental: data })
   } catch (e) {
-    return json({ error: String(e) }, 500)
+    console.error("create-rental failed:", e)
+    return json({ error: "Не удалось отправить заявку. Попробуйте позже." }, 500)
   }
 })

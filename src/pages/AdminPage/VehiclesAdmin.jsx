@@ -8,7 +8,7 @@ const COLUMNS = 6
 
 const EMPTY = {
   id: '', category_id: '', brand: '', model: '', class: '',
-    price_day: '', price_week: '', deposit: '0', seats: '', top_speed: '', trunk_capacity: '',
+  price_day: '', price_week: '', deposit: '0', seats: '', top_speed: '', trunk_capacity: '',
   rating: '5', rents: '0', location: '', badge: '',
   featuresText: '', images: [],
   stageCount: '0', slot2: 'Баланс', slot3: 'Баланс', slot4: 'Баланс',
@@ -75,6 +75,7 @@ export default function VehiclesAdmin() {
         pricePerDay: String(t.price_per_day),
       })),
     })
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   function resetForm() {
@@ -98,8 +99,8 @@ export default function VehiclesAdmin() {
     setForm((f) => ({ ...f, priceTiers: f.priceTiers.filter((_, idx) => idx !== i) }))
   }
 
-  // Стейджи: 0 — стоковая; либо непрерывно 2–4 подряд, слот 1 всегда
-  // "База", слоты 2+ — любая из Баланс/Скорость/Управление.
+  // Стейджи: 0 — стоковая; иначе непрерывно 1–4. Слот 1 всегда "База",
+  // слоты 2+ — любая из Баланс/Скорость/Управление.
   function buildStagesPayload() {
     const count = Number(form.stageCount)
     if (count === 0) return []
@@ -152,6 +153,9 @@ export default function VehiclesAdmin() {
         await callAdminApi('vehicles', 'update', { id: editingId, changes })
       } else {
         await callAdminApi('vehicles', 'create', vehiclePayload)
+        // Машина уже создана: если следующие шаги упадут, повторное
+        // сохранение должно быть обновлением, а не вторым create (duplicate key).
+        setEditingId(vehicleId)
       }
       await callAdminApi('stages', 'replaceForVehicle', { vehicleId, stages: buildStagesPayload() })
       await callAdminApi('priceTiers', 'replaceForVehicle', { vehicleId, tiers: buildPriceTiersPayload() })
@@ -159,6 +163,7 @@ export default function VehiclesAdmin() {
       load()
     } catch (e) {
       setError(e.message)
+      load()
     }
   }
 
@@ -175,6 +180,7 @@ export default function VehiclesAdmin() {
     if (!confirm('Удалить машину из каталога?')) return
     try {
       await callAdminApi('vehicles', 'delete', { id })
+      if (editingId === id) resetForm()
       load()
     } catch (e) {
       setError(e.message)
@@ -190,6 +196,8 @@ export default function VehiclesAdmin() {
           placeholder="ID (латиницей, напр. straton-comet)"
           value={form.id}
           disabled={!!editingId}
+          pattern="[a-z0-9\-]+"
+          title="Только строчные латинские буквы, цифры и дефис"
           onChange={(e) => setForm({ ...form, id: e.target.value })}
           required
         />
@@ -202,13 +210,13 @@ export default function VehiclesAdmin() {
         <input placeholder="Бренд" value={form.brand} onChange={(e) => setForm({ ...form, brand: e.target.value })} required />
         <input placeholder="Модель" value={form.model} onChange={(e) => setForm({ ...form, model: e.target.value })} required />
         <input placeholder="Класс" value={form.class} onChange={(e) => setForm({ ...form, class: e.target.value })} />
-        <input type="number" placeholder="Цена / сутки, ₽ (по умолчанию, если нет тарифов)" value={form.price_day} onChange={(e) => setForm({ ...form, price_day: e.target.value })} required />
-        <input type="number" placeholder="Цена / неделя, ₽ (устарело, необязательно)" value={form.price_week} onChange={(e) => setForm({ ...form, price_week: e.target.value })} />
+        <input type="number" min="0" placeholder="Цена / сутки, ₽ (по умолчанию, если нет тарифов)" value={form.price_day} onChange={(e) => setForm({ ...form, price_day: e.target.value })} required />
+        <input type="number" min="0" placeholder="Цена / неделя, ₽ (устарело, необязательно)" value={form.price_week} onChange={(e) => setForm({ ...form, price_week: e.target.value })} />
         <input type="number" min="0" placeholder="Залог, ₽ (0 — без залога)" value={form.deposit} onChange={(e) => setForm({ ...form, deposit: e.target.value })} />
-        <input type="number" placeholder="Мест в салоне" value={form.seats} onChange={(e) => setForm({ ...form, seats: e.target.value })} />
-        <input type="number" placeholder="Макс. скорость, км/ч" value={form.top_speed} onChange={(e) => setForm({ ...form, top_speed: e.target.value })} />
-<input type="number" min="0" placeholder="Слотов под вещи (напр. 5 или 10)" value={form.trunk_capacity} onChange={(e) => setForm({ ...form, trunk_capacity: e.target.value })} />
-        <input type="number" step="0.1" placeholder="Рейтинг" value={form.rating} onChange={(e) => setForm({ ...form, rating: e.target.value })} />
+        <input type="number" min="1" placeholder="Мест в салоне" value={form.seats} onChange={(e) => setForm({ ...form, seats: e.target.value })} />
+        <input type="number" min="0" placeholder="Макс. скорость, км/ч" value={form.top_speed} onChange={(e) => setForm({ ...form, top_speed: e.target.value })} />
+        <input type="number" min="0" placeholder="Слотов под вещи (напр. 5 или 10)" value={form.trunk_capacity} onChange={(e) => setForm({ ...form, trunk_capacity: e.target.value })} />
+        <input type="number" step="0.1" min="0" max="5" placeholder="Рейтинг" value={form.rating} onChange={(e) => setForm({ ...form, rating: e.target.value })} />
         <input placeholder="Точка выдачи" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} />
         <input placeholder="Бейдж (необязательно)" value={form.badge} onChange={(e) => setForm({ ...form, badge: e.target.value })} />
         <textarea
@@ -227,22 +235,25 @@ export default function VehiclesAdmin() {
             Количество стейджей
             <select value={form.stageCount} onChange={(e) => setForm({ ...form, stageCount: e.target.value })}>
               <option value="0">Стоковая (0)</option>
+              <option value="1">1 (только База)</option>
               <option value="2">2 (База + 1)</option>
               <option value="3">3 (База + 2)</option>
               <option value="4">4 (База + 3)</option>
             </select>
           </label>
 
-          {stageCount >= 2 && (
+          {stageCount >= 1 && (
             <div className="admin-stages__slots">
               <span className="admin-stages__slot-label">1. База</span>
 
-              <label className="admin-stages__slot-label">
-                2.
-                <select value={form.slot2} onChange={(e) => setForm({ ...form, slot2: e.target.value })}>
-                  {EXTRA_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-                </select>
-              </label>
+              {stageCount >= 2 && (
+                <label className="admin-stages__slot-label">
+                  2.
+                  <select value={form.slot2} onChange={(e) => setForm({ ...form, slot2: e.target.value })}>
+                    {EXTRA_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </label>
+              )}
 
               {stageCount >= 3 && (
                 <label className="admin-stages__slot-label">

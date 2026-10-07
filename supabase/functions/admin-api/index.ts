@@ -131,8 +131,8 @@ function validateStages(stages: any[]) {
   if (!Array.isArray(stages)) throw new Error("stages должен быть массивом")
   if (stages.length === 0) return
 
-  if (stages.length < 2 || stages.length > 4) {
-    throw new Error("У машины должно быть 0 стейджей (стоковая) либо от 2 до 4 подряд")
+  if (stages.length > 4) {
+    throw new Error("У машины может быть не больше 4 стейджей")
   }
 
   const sorted = [...stages].sort((a, b) => a.position - b.position)

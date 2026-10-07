@@ -37,7 +37,10 @@ export async function login(password) {
 
 export async function callAdminApi(resource, action, payload) {
   const token = getStoredToken()
-  if (!token) throw new Error('Не авторизовано, войдите заново')
+  if (!token) {
+    window.dispatchEvent(new Event('far-admin-unauthorized'))
+    throw new Error('Не авторизовано, войдите заново')
+  }
 
   const res = await fetch(`${FUNCTIONS_URL}/admin-api`, {
     method: 'POST',
@@ -50,7 +53,11 @@ export async function callAdminApi(resource, action, payload) {
 
   const json = await res.json()
   if (!res.ok) {
-    if (res.status === 401) clearStoredToken()
+    if (res.status === 401) {
+      clearStoredToken()
+      // AdminPage слушает это событие и возвращает на экран входа.
+      window.dispatchEvent(new Event('far-admin-unauthorized'))
+    }
     throw new Error(json.error || 'Ошибка запроса к админ-API')
   }
   return json

@@ -1,14 +1,17 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useParams, Navigate } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import Breadcrumbs from '../../components/Breadcrumbs/Breadcrumbs.jsx'
 import FilterPanel from '../../components/FilterPanel/FilterPanel.jsx'
 import VehicleGrid from '../../components/VehicleGrid/VehicleGrid.jsx'
 import SkeletonVehicleCard from '../../components/SkeletonVehicleCard/SkeletonVehicleCard.jsx'
 import EmptyState from '../../components/EmptyState/EmptyState.jsx'
+import ErrorState from '../../components/ErrorState/ErrorState.jsx'
 import VehicleIcon from '../../components/VehicleIcon/VehicleIcon.jsx'
+import NotFoundPage from '../NotFoundPage/NotFoundPage.jsx'
 import { fetchCategoryById } from '../../api/categories.js'
 import { fetchVehiclesByCategory } from '../../api/vehicles.js'
-import { EMPTY_FILTERS, filterVehicles } from '../../utils/filterVehicles.js'
+import { EMPTY_FILTERS, filterVehicles, distinctValues } from '../../utils/filterVehicles.js'
+import usePageMeta from '../../hooks/usePageMeta.js'
 import './CategoryPage.css'
 
 const SKELETON_COUNT = 6
@@ -18,31 +21,31 @@ export default function CategoryPage() {
   const [category, setCategory] = useState(null)
   const [allVehicles, setAllVehicles] = useState([])
   const [filters, setFilters] = useState(EMPTY_FILTERS)
-  const [loading, setLoading] = useState(true)
-  const [notFound, setNotFound] = useState(false)
+  const [status, setStatus] = useState('loading') // loading | ok | notFound | error
+  const [reloadKey, setReloadKey] = useState(0)
+
+  usePageMeta(category?.label, category?.description)
 
   useEffect(() => {
     let cancelled = false
-    setLoading(true)
-    setNotFound(false)
+    setStatus('loading')
     setFilters(EMPTY_FILTERS)
 
     async function load() {
       try {
         const cat = await fetchCategoryById(categoryId)
         if (!cat) {
-          if (!cancelled) setNotFound(true)
+          if (!cancelled) setStatus('notFound')
           return
         }
         const vehicles = await fetchVehiclesByCategory(categoryId)
         if (!cancelled) {
           setCategory(cat)
           setAllVehicles(vehicles)
+          setStatus('ok')
         }
       } catch (e) {
-        if (!cancelled) setNotFound(true)
-      } finally {
-        if (!cancelled) setLoading(false)
+        if (!cancelled) setStatus('error')
       }
     }
 
@@ -50,7 +53,7 @@ export default function CategoryPage() {
     return () => {
       cancelled = true
     }
-  }, [categoryId])
+  }, [categoryId, reloadKey])
 
   const priceBounds = useMemo(() => {
     if (allVehicles.length === 0) return { min: 0, max: 1000, step: 100 }
@@ -60,16 +63,29 @@ export default function CategoryPage() {
     return { min, max, step: Math.max(100, Math.round((max - min) / 20 / 100) * 100) || 100 }
   }, [allVehicles])
 
-  const filteredVehicles = useMemo(
-    () => filterVehicles(allVehicles, filters),
-    [allVehicles, filters]
+  const options = useMemo(
+    () => ({ classes: distinctValues(allVehicles, 'class'), locations: distinctValues(allVehicles, 'location') }),
+    [allVehicles]
   )
 
-  if (notFound) {
-    return <Navigate to="/" replace />
+  const filteredVehicles = useMemo(() => filterVehicles(allVehicles, filters), [allVehicles, filters])
+  const categoriesById = useMemo(() => (category ? { [category.id]: category } : {}), [category])
+
+  if (status === 'notFound') {
+    return <NotFoundPage title="Категория не найдена" text="Такой категории нет — выберите одну из списка на главной." />
   }
 
-  if (loading || !category) {
+  if (status === 'error') {
+    return (
+      <section className="container category-page">
+        <div className="category-page__loading">
+          <ErrorState title="Не удалось загрузить категорию" onRetry={() => setReloadKey((k) => k + 1)} />
+        </div>
+      </section>
+    )
+  }
+
+  if (status === 'loading' || !category) {
     return (
       <section className="container category-page">
         <div className="category-page__loading">
@@ -116,6 +132,7 @@ export default function CategoryPage() {
             setFilters={setFilters}
             priceBounds={priceBounds}
             resultCount={filteredVehicles.length}
+            options={options}
           />
 
           {filteredVehicles.length === 0 ? (
@@ -126,7 +143,7 @@ export default function CategoryPage() {
               onAction={() => setFilters(EMPTY_FILTERS)}
             />
           ) : (
-            <VehicleGrid vehicles={filteredVehicles} />
+            <VehicleGrid vehicles={filteredVehicles} categoriesById={categoriesById} />
           )}
         </>
       )}

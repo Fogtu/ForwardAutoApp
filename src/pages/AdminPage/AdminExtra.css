@@ -1,0 +1,27 @@
+/* Стили новых вкладок админки (подключается из AdminPage.jsx). */
+.admin-page__head-user { display: flex; align-items: center; gap: 12px; font-size: 13px; color: var(--text-muted); }
+
+.admin-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+@media (max-width: 900px) { .admin-stats { grid-template-columns: 1fr 1fr; } }
+.admin-stat { background: var(--bg-card); border: 1px solid var(--line); border-radius: var(--radius-m); padding: 18px 20px; }
+.admin-stat dt { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; }
+.admin-stat dd { margin: 0; font-size: 24px; font-weight: 700; font-family: var(--font-mono); }
+.admin-stat small { display: block; margin-top: 6px; font-size: 12px; color: var(--text-faint); font-family: var(--font-body); font-weight: 400; }
+
+.admin-toolbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.admin-toolbar select, .admin-inline-form input, .admin-inline-form select {
+  background: var(--bg-elevated); border: 1px solid var(--line-strong); border-radius: var(--radius-s);
+  color: var(--text); padding: 8px 10px; font-size: 13.5px;
+}
+.admin-inline-form { display: flex; gap: 10px; flex-wrap: wrap; background: var(--bg-card); border: 1px solid var(--line); border-radius: var(--radius-m); padding: 16px; }
+.admin-inline-form input { min-width: 180px; flex: 1; }
+
+.admin-bar { height: 8px; border-radius: 4px; background: var(--bg-elevated); overflow: hidden; min-width: 90px; }
+.admin-bar > span { display: block; height: 100%; background: var(--text); }
+
+.admin-table tr.is-pending td { background: color-mix(in srgb, var(--warn) 9%, transparent); }
+.admin-table .admin-muted { color: var(--text-faint); }
+.admin-table .admin-wrap { max-width: 320px; white-space: normal; word-break: break-word; }
+.admin-table .btn-ok { border-color: color-mix(in srgb, var(--ok) 60%, transparent); color: var(--ok); }
+.admin-table .btn-bad { border-color: color-mix(in srgb, var(--danger) 60%, transparent); color: var(--danger); }
+.admin-note { font-size: 13px; color: var(--text-muted); }

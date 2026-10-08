@@ -1,3 +1,4 @@
+import { EMPTY_FILTERS } from '../../utils/filterVehicles.js'
 import './FilterPanel.css'
 
 const SORT_OPTIONS = [
@@ -5,11 +6,17 @@ const SORT_OPTIONS = [
   { id: 'price-asc', label: 'Сначала дешевле' },
   { id: 'price-desc', label: 'Сначала дороже' },
   { id: 'rating-desc', label: 'По рейтингу' },
+  { id: 'speed-desc', label: 'По скорости' },
+  { id: 'deposit-asc', label: 'Сначала меньший залог' },
 ]
 
-export default function FilterPanel({ filters, setFilters, priceBounds, resultCount }) {
+const SEAT_OPTIONS = [2, 4, 5, 7]
+
+export default function FilterPanel({ filters, setFilters, priceBounds, resultCount, options = { classes: [], locations: [] } }) {
   const priceMin = filters.priceMin || priceBounds.min
   const priceMax = filters.priceMax === Infinity ? priceBounds.max : filters.priceMax
+  const patch = (p) => setFilters((f) => ({ ...f, ...p }))
+  const hasExtra = filters.vehicleClass || filters.location || filters.minSeats || filters.onlyFree
 
   return (
     <div className="filter-bar">
@@ -22,7 +29,7 @@ export default function FilterPanel({ filters, setFilters, priceBounds, resultCo
           type="text"
           placeholder="Поиск по марке или модели"
           value={filters.search}
-          onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value }))}
+          onChange={(e) => patch({ search: e.target.value })}
         />
       </label>
 
@@ -37,10 +44,7 @@ export default function FilterPanel({ filters, setFilters, priceBounds, resultCo
             max={priceBounds.max}
             step={priceBounds.step}
             value={priceMin}
-            onChange={(e) => {
-              const value = Math.min(Number(e.target.value), priceMax - priceBounds.step)
-              setFilters((f) => ({ ...f, priceMin: value }))
-            }}
+            onChange={(e) => patch({ priceMin: Math.min(Number(e.target.value), priceMax - priceBounds.step) })}
           />
           <input
             type="range"
@@ -48,17 +52,14 @@ export default function FilterPanel({ filters, setFilters, priceBounds, resultCo
             max={priceBounds.max}
             step={priceBounds.step}
             value={priceMax}
-            onChange={(e) => {
-              const value = Math.max(Number(e.target.value), priceMin + priceBounds.step)
-              setFilters((f) => ({ ...f, priceMax: value }))
-            }}
+            onChange={(e) => patch({ priceMax: Math.max(Number(e.target.value), priceMin + priceBounds.step) })}
           />
         </div>
       </div>
 
       <label className="filter-bar__sort">
         <span>Сортировка</span>
-        <select value={filters.sortBy} onChange={(e) => setFilters((f) => ({ ...f, sortBy: e.target.value }))}>
+        <select value={filters.sortBy} onChange={(e) => patch({ sortBy: e.target.value })}>
           {SORT_OPTIONS.map((opt) => (
             <option key={opt.id} value={opt.id}>{opt.label}</option>
           ))}
@@ -66,6 +67,34 @@ export default function FilterPanel({ filters, setFilters, priceBounds, resultCo
       </label>
 
       <span className="filter-bar__count mono">{resultCount}</span>
+
+      <div className="filter-bar__extra">
+        {options.classes.length > 1 && (
+          <select value={filters.vehicleClass} onChange={(e) => patch({ vehicleClass: e.target.value })} aria-label="Класс">
+            <option value="">Все классы</option>
+            {options.classes.map((c) => <option key={c} value={c}>{c}</option>)}
+          </select>
+        )}
+        {options.locations.length > 1 && (
+          <select value={filters.location} onChange={(e) => patch({ location: e.target.value })} aria-label="Точка выдачи">
+            <option value="">Все точки выдачи</option>
+            {options.locations.map((l) => <option key={l} value={l}>{l}</option>)}
+          </select>
+        )}
+        <select value={filters.minSeats} onChange={(e) => patch({ minSeats: Number(e.target.value) })} aria-label="Мест в салоне">
+          <option value={0}>Любое число мест</option>
+          {SEAT_OPTIONS.map((n) => <option key={n} value={n}>от {n} мест</option>)}
+        </select>
+        <label className="filter-bar__check">
+          <input type="checkbox" checked={filters.onlyFree} onChange={(e) => patch({ onlyFree: e.target.checked })} />
+          Только свободные сейчас
+        </label>
+        {hasExtra && (
+          <button type="button" className="filter-bar__reset" onClick={() => setFilters({ ...EMPTY_FILTERS, search: filters.search, sortBy: filters.sortBy })}>
+            Сбросить
+          </button>
+        )}
+      </div>
     </div>
   )
 }

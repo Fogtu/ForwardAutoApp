@@ -1,0 +1,248 @@
+/* ============================================================
+   Стили новых функций: календарь, отзывы, статус заявки,
+   избранное и сравнение, расширенные фильтры, 404/ошибки.
+   Подключается в App.jsx — другие CSS-файлы править не нужно.
+   ============================================================ */
+
+:root {
+  --danger: #d9736b;
+  --ok: #59a896;
+  --warn: #d3b24c;
+}
+
+/* ---------- шапка ---------- */
+.header__nav a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.header__count {
+  font-size: 11px;
+  min-width: 18px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--white);
+  color: var(--on-white);
+  text-align: center;
+}
+
+@media (max-width: 820px) {
+  .header__row { height: auto; padding-top: 10px; padding-bottom: 10px; flex-wrap: wrap; gap: 10px 16px; }
+  .header__nav { display: flex; gap: 18px; font-size: 13px; width: 100%; order: 3; overflow-x: auto; white-space: nowrap; }
+  .header__server { display: none; }
+}
+
+/* ---------- карточка машины ---------- */
+.v-card-wrap { position: relative; display: flex; }
+.v-card-wrap > .v-card { flex: 1; min-width: 0; }
+
+.v-card__actions {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  gap: 6px;
+}
+
+.icon-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--line-strong);
+  background: rgba(16, 17, 20, 0.7);
+  color: var(--text);
+  font-size: 16px;
+  line-height: 1;
+  backdrop-filter: blur(6px);
+  transition: border-color 120ms ease, background 120ms ease;
+}
+.icon-btn:hover:not(:disabled) { border-color: var(--text); }
+.icon-btn.is-on { background: var(--white); color: var(--on-white); border-color: var(--white); }
+.icon-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.v-card__busy {
+  position: absolute;
+  bottom: 10px;
+  left: 16px;
+  z-index: 1;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 9px;
+  border-radius: 3px;
+  background: var(--danger);
+  color: #101114;
+}
+
+/* ---------- фильтры ---------- */
+.filter-bar__extra {
+  flex-basis: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  border-top: 1px solid var(--line);
+  padding-top: 14px;
+}
+
+.filter-bar__extra select {
+  background: var(--bg-elevated);
+  border: 1px solid var(--line-strong);
+  color: var(--text);
+  border-radius: var(--radius-s);
+  padding: 7px 10px;
+  font-size: 13.5px;
+}
+
+.filter-bar__check { display: inline-flex; align-items: center; gap: 8px; font-size: 13.5px; color: var(--text-muted); cursor: pointer; }
+.filter-bar__check input { accent-color: var(--white); width: 16px; height: 16px; }
+
+.filter-bar__reset {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 13px;
+  text-decoration: underline;
+  padding: 4px;
+}
+.filter-bar__reset:hover { color: var(--text); }
+
+/* ---------- ошибка / 404 ---------- */
+.error-state, .not-found {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+  padding: 70px 20px;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-m);
+  color: var(--text-muted);
+}
+.error-state h3 { font-size: 18px; color: var(--text); }
+.error-state p { max-width: 40ch; font-size: 14px; }
+
+.not-found { border: none; padding-top: 110px; padding-bottom: 130px; }
+.not-found__code { font-family: var(--font-mono); font-size: 64px; font-weight: 500; color: var(--text-faint); line-height: 1; }
+.not-found h1 { font-size: 24px; color: var(--text); }
+.not-found p { max-width: 40ch; font-size: 14.5px; }
+
+/* ---------- календарь ---------- */
+.calendar__nav { display: flex; justify-content: flex-end; gap: 6px; margin-bottom: 8px; }
+.calendar__arrow {
+  width: 32px; height: 32px; border-radius: var(--radius-s);
+  background: var(--bg-elevated); border: 1px solid var(--line-strong); color: var(--text); font-size: 18px; line-height: 1;
+}
+.calendar__arrow:disabled { opacity: 0.35; cursor: not-allowed; }
+
+.calendar__months { display: grid; grid-template-columns: repeat(2, 1fr); gap: 22px; }
+@media (max-width: 620px) { .calendar__months { grid-template-columns: 1fr; } }
+
+.calendar__month h4 { font-size: 14px; margin-bottom: 10px; }
+.calendar__grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+.calendar__wd { font-size: 11px; color: var(--text-faint); text-align: center; padding-bottom: 4px; }
+
+.calendar__day {
+  aspect-ratio: 1;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12.5px; border-radius: 4px; border: 1px solid transparent;
+  background: var(--bg-elevated);
+}
+.calendar__day.is-past { opacity: 0.3; }
+.calendar__day.is-today { border-color: var(--text-muted); }
+.calendar__day.is-busy {
+  background: color-mix(in srgb, var(--danger) 30%, var(--bg-elevated));
+  color: var(--text);
+  text-decoration: line-through;
+}
+.calendar__day.is-selected { outline: 2px solid var(--focus); outline-offset: -2px; }
+
+.calendar__legend { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 14px; font-size: 12.5px; color: var(--text-muted); }
+.calendar__dot { width: 10px; height: 10px; border-radius: 2px; display: inline-block; margin-left: 8px; }
+.calendar__dot:first-child { margin-left: 0; }
+.calendar__dot.is-busy { background: color-mix(in srgb, var(--danger) 55%, var(--bg-elevated)); }
+.calendar__dot.is-free { background: var(--bg-elevated); border: 1px solid var(--line-strong); }
+.calendar__dot.is-selected { border: 2px solid var(--focus); }
+
+/* ---------- страница машины ---------- */
+.vehicle-page__busy {
+  font-size: 13px; color: var(--text); line-height: 1.5;
+  background: color-mix(in srgb, var(--danger) 16%, var(--bg-elevated));
+  border: 1px solid color-mix(in srgb, var(--danger) 40%, transparent);
+  border-radius: var(--radius-s); padding: 10px 12px; margin-bottom: 14px;
+}
+.vehicle-page__actions { display: flex; gap: 8px; margin-top: 10px; }
+.vehicle-page__actions .btn { flex: 1; padding: 11px 10px; }
+.vehicle-page__rating-count { color: var(--text-muted); }
+
+/* ---------- отзывы и звёзды ---------- */
+.stars { color: var(--warn); letter-spacing: 1px; font-size: 14px; }
+.stars__off { color: var(--line-strong); }
+
+.reviews { display: flex; flex-direction: column; }
+.reviews__item { padding: 14px 0; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 6px; }
+.reviews__item:last-child { border-bottom: none; }
+.reviews__head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 14px; }
+.reviews__date { margin-left: auto; font-size: 12px; color: var(--text-faint); }
+.reviews__item p { font-size: 14px; color: var(--text-muted); line-height: 1.55; }
+
+.review-form { display: flex; flex-direction: column; gap: 14px; margin-top: 26px; padding-top: 24px; border-top: 1px solid var(--line); }
+.review-form h3 { font-size: 17px; }
+.review-form__stars { display: flex; gap: 4px; }
+.review-form__stars button { background: none; border: none; font-size: 28px; line-height: 1; color: var(--line-strong); padding: 2px; }
+.review-form__stars button.is-on { color: var(--warn); }
+.review-form textarea {
+  background: var(--bg-elevated); border: 1px solid var(--line-strong); border-radius: var(--radius-s);
+  padding: 12px 14px; color: var(--text); font-size: 14px; font-family: var(--font-body); min-height: 90px; resize: vertical;
+}
+
+/* ---------- статус заявки ---------- */
+.status-page { padding-top: 8px; padding-bottom: 100px; }
+.status-page__layout { max-width: 520px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; }
+.status-page h1 { font-size: 24px; }
+.status-page__lead { color: var(--text-muted); font-size: 14px; line-height: 1.55; margin-top: -8px; }
+
+.status-lookup { display: flex; gap: 10px; }
+.status-lookup input {
+  flex: 1; min-width: 0; background: var(--bg-elevated); border: 1px solid var(--line-strong); border-radius: var(--radius-s);
+  padding: 12px 14px; color: var(--text); font-family: var(--font-mono); font-size: 14px; text-transform: uppercase; letter-spacing: 0.08em;
+}
+
+.status-card { background: var(--bg-card); border: 1px solid var(--line); border-radius: var(--radius-l); padding: 28px; display: flex; flex-direction: column; gap: 14px; }
+.status-card__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.status-card__code { font-size: 12.5px; color: var(--text-faint); }
+.status-card h2 { font-size: 20px; }
+.status-card__hint { font-size: 14px; color: var(--text-muted); line-height: 1.55; }
+.status-card dl { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 18px; padding-top: 16px; border-top: 1px solid var(--line); }
+.status-card dt { font-size: 11.5px; color: var(--text-faint); margin-bottom: 3px; }
+.status-card dd { margin: 0; font-size: 14px; }
+
+.status-badge { font-size: 12px; font-weight: 600; padding: 5px 10px; border-radius: 999px; border: 1px solid var(--line-strong); }
+.status-badge.is-pending { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 50%, transparent); }
+.status-badge.is-active { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 50%, transparent); }
+.status-badge.is-completed { color: var(--cat-legkovoy); border-color: color-mix(in srgb, var(--cat-legkovoy) 50%, transparent); }
+.status-badge.is-cancelled, .status-badge.is-rejected { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 50%, transparent); }
+
+.booking-form__conflict { color: var(--danger); font-size: 13.5px; line-height: 1.5; }
+.booking-page__code {
+  font-family: var(--font-mono); font-size: 26px; letter-spacing: 0.1em; color: var(--text);
+  border: 1px dashed var(--line-strong); border-radius: var(--radius-m); padding: 12px 22px;
+}
+
+/* ---------- избранное и сравнение ---------- */
+.list-page { padding-top: 8px; padding-bottom: 100px; }
+.list-page__head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 26px; }
+.list-page__head h1 { font-size: 28px; }
+.list-page__head p { color: var(--text-muted); font-size: 14px; }
+.list-page__actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.compare-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius-m); background: var(--bg-card); }
+.compare-table { width: 100%; border-collapse: collapse; min-width: 560px; }
+.compare-table th, .compare-table td { padding: 14px 16px; text-align: left; font-size: 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.compare-table tr:last-child td { border-bottom: none; }
+.compare-table tbody th { width: 150px; color: var(--text-muted); font-weight: 500; font-size: 13px; }
+.compare-table thead th { font-family: var(--font-display); font-size: 16px; }
+.compare-table thead a:hover { text-decoration: underline; }
+.compare-table__remove { display: block; margin-top: 6px; background: none; border: none; padding: 0; color: var(--text-faint); font-size: 12px; font-family: var(--font-body); font-weight: 400; }
+.compare-table__remove:hover { color: var(--text); }
+.compare-table .is-best { color: var(--ok); font-weight: 600; }

@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { callAdminApi } from '../../api/admin.js'
 import SkeletonTableRows from '../../components/SkeletonTableRows/SkeletonTableRows.jsx'
 import ImageUploader from '../../components/ImageUploader/ImageUploader.jsx'
+import { formatDate } from '../../utils/format.js'
+import { currentBusyUntil } from '../../utils/availability.js'
 
 const EXTRA_CATEGORIES = ['Баланс', 'Скорость', 'Управление']
 const COLUMNS = 6
@@ -15,9 +17,45 @@ const EMPTY = {
   priceTiers: [],
 }
 
+// Собирает значения формы из строки машины. duplicate = true делает «копию»:
+// новый id, нулевой счётчик аренд, без бейджа и со стандартным рейтингом.
+function formFromVehicle(v, duplicate = false) {
+  const stages = (v.vehicle_stages || []).slice().sort((a, b) => a.position - b.position)
+  const tiers = (v.vehicle_price_tiers || []).slice().sort((a, b) => a.min_days - b.min_days)
+  return {
+    id: duplicate ? `${v.id}-copy` : v.id,
+    category_id: v.category_id,
+    brand: v.brand,
+    model: v.model,
+    class: v.class || '',
+    price_day: v.price_day ?? '',
+    price_week: v.price_week ?? '',
+    deposit: v.deposit ?? '0',
+    seats: v.seats ?? '',
+    top_speed: v.top_speed ?? '',
+    trunk_capacity: v.trunk_capacity ?? '',
+    rating: duplicate ? '5' : v.rating ?? '5',
+    rents: duplicate ? '0' : v.rents ?? '0',
+    location: v.location || '',
+    badge: duplicate ? '' : v.badge || '',
+    featuresText: (v.features || []).join(', '),
+    images: v.images || [],
+    stageCount: String(stages.length),
+    slot2: stages[1]?.category || 'Баланс',
+    slot3: stages[2]?.category || 'Баланс',
+    slot4: stages[3]?.category || 'Баланс',
+    priceTiers: tiers.map((t) => ({
+      minDays: String(t.min_days),
+      maxDays: t.max_days == null ? '' : String(t.max_days),
+      pricePerDay: String(t.price_per_day),
+    })),
+  }
+}
+
 export default function VehiclesAdmin() {
   const [vehicles, setVehicles] = useState([])
   const [categories, setCategories] = useState([])
+  const [busyUntil, setBusyUntil] = useState({}) // { [vehicleId]: 'YYYY-MM-DD' } — занята сегодня
   const [form, setForm] = useState(EMPTY)
   const [editingId, setEditingId] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -26,12 +64,29 @@ export default function VehiclesAdmin() {
   async function load() {
     setLoading(true)
     try {
-      const [v, c] = await Promise.all([
+      const [v, c, r] = await Promise.all([
         callAdminApi('vehicles', 'list'),
         callAdminApi('categories', 'list'),
+        callAdminApi('rentals', 'list'),
       ])
       setVehicles(v)
       setCategories(c)
+
+      // Занятость — по датам одобренных заявок.
+      const ranges = {}
+      for (const rental of r) {
+        if (rental.status !== 'active' || !rental.vehicle_id) continue
+        ;(ranges[rental.vehicle_id] ||= []).push({
+          start: String(rental.start_date).slice(0, 10),
+          end: String(rental.end_date).slice(0, 10),
+        })
+      }
+      const until = {}
+      for (const [id, list] of Object.entries(ranges)) {
+        const d = currentBusyUntil(list, new Date().toISOString().slice(0, 10))
+        if (d) until[id] = d
+      }
+      setBusyUntil(until)
     } catch (e) {
       setError(e.message)
     } finally {
@@ -45,36 +100,15 @@ export default function VehiclesAdmin() {
 
   function startEdit(v) {
     setEditingId(v.id)
-    const stages = (v.vehicle_stages || []).slice().sort((a, b) => a.position - b.position)
-    const tiers = (v.vehicle_price_tiers || []).slice().sort((a, b) => a.min_days - b.min_days)
-    setForm({
-      id: v.id,
-      category_id: v.category_id,
-      brand: v.brand,
-      model: v.model,
-      class: v.class || '',
-      price_day: v.price_day ?? '',
-      price_week: v.price_week ?? '',
-      deposit: v.deposit ?? '0',
-      seats: v.seats ?? '',
-      top_speed: v.top_speed ?? '',
-      trunk_capacity: v.trunk_capacity ?? '',
-      rating: v.rating ?? '5',
-      rents: v.rents ?? '0',
-      location: v.location || '',
-      badge: v.badge || '',
-      featuresText: (v.features || []).join(', '),
-      images: v.images || [],
-      stageCount: String(stages.length),
-      slot2: stages[1]?.category || 'Баланс',
-      slot3: stages[2]?.category || 'Баланс',
-      slot4: stages[3]?.category || 'Баланс',
-      priceTiers: tiers.map((t) => ({
-        minDays: String(t.min_days),
-        maxDays: t.max_days == null ? '' : String(t.max_days),
-        pricePerDay: String(t.price_per_day),
-      })),
-    })
+    setForm(formFromVehicle(v))
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  // Дублирование: заполняет форму копией — осталось поправить id/модель и нажать «Добавить».
+  function startDuplicate(v) {
+    setEditingId(null)
+    setForm(formFromVehicle(v, true))
+    setError(null)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
@@ -99,8 +133,7 @@ export default function VehiclesAdmin() {
     setForm((f) => ({ ...f, priceTiers: f.priceTiers.filter((_, idx) => idx !== i) }))
   }
 
-  // Стейджи: 0 — стоковая; иначе непрерывно 1–4. Слот 1 всегда "База",
-  // слоты 2+ — любая из Баланс/Скорость/Управление.
+  // Стейджи: 0 — стоковая; иначе непрерывно 1–4. Слот 1 всегда "База".
   function buildStagesPayload() {
     const count = Number(form.stageCount)
     if (count === 0) return []
@@ -111,7 +144,6 @@ export default function VehiclesAdmin() {
     return stages
   }
 
-  // Тарифы: пропускаем незаполненные строки (пустое "от" или цену).
   function buildPriceTiersPayload() {
     return form.priceTiers
       .filter((t) => t.minDays !== '' && t.pricePerDay !== '')
@@ -153,8 +185,8 @@ export default function VehiclesAdmin() {
         await callAdminApi('vehicles', 'update', { id: editingId, changes })
       } else {
         await callAdminApi('vehicles', 'create', vehiclePayload)
-        // Машина уже создана: если следующие шаги упадут, повторное
-        // сохранение должно быть обновлением, а не вторым create (duplicate key).
+        // Машина уже создана: если следующие шаги упадут, повторное сохранение
+        // должно быть обновлением, а не вторым create (duplicate key).
         setEditingId(vehicleId)
       }
       await callAdminApi('stages', 'replaceForVehicle', { vehicleId, stages: buildStagesPayload() })
@@ -164,15 +196,6 @@ export default function VehiclesAdmin() {
     } catch (e) {
       setError(e.message)
       load()
-    }
-  }
-
-  async function handleToggleRented(v) {
-    try {
-      await callAdminApi('vehicles', 'update', { id: v.id, changes: { is_rented: !v.is_rented } })
-      load()
-    } catch (e) {
-      setError(e.message)
     }
   }
 
@@ -216,7 +239,7 @@ export default function VehiclesAdmin() {
         <input type="number" min="1" placeholder="Мест в салоне" value={form.seats} onChange={(e) => setForm({ ...form, seats: e.target.value })} />
         <input type="number" min="0" placeholder="Макс. скорость, км/ч" value={form.top_speed} onChange={(e) => setForm({ ...form, top_speed: e.target.value })} />
         <input type="number" min="0" placeholder="Слотов под вещи (напр. 5 или 10)" value={form.trunk_capacity} onChange={(e) => setForm({ ...form, trunk_capacity: e.target.value })} />
-        <input type="number" step="0.1" min="0" max="5" placeholder="Рейтинг" value={form.rating} onChange={(e) => setForm({ ...form, rating: e.target.value })} />
+        <input type="number" step="0.1" min="0" max="5" placeholder="Рейтинг (пересчитается по отзывам)" value={form.rating} onChange={(e) => setForm({ ...form, rating: e.target.value })} />
         <input placeholder="Точка выдачи" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} />
         <input placeholder="Бейдж (необязательно)" value={form.badge} onChange={(e) => setForm({ ...form, badge: e.target.value })} />
         <textarea
@@ -282,27 +305,9 @@ export default function VehiclesAdmin() {
           <div className="admin-price-tiers__rows">
             {form.priceTiers.map((t, i) => (
               <div key={i} className="admin-price-tiers__row">
-                <input
-                  type="number"
-                  min="1"
-                  placeholder="от, дней"
-                  value={t.minDays}
-                  onChange={(e) => updateTier(i, 'minDays', e.target.value)}
-                />
-                <input
-                  type="number"
-                  min="1"
-                  placeholder="до, дней (пусто = без ограничения)"
-                  value={t.maxDays}
-                  onChange={(e) => updateTier(i, 'maxDays', e.target.value)}
-                />
-                <input
-                  type="number"
-                  min="0"
-                  placeholder="₽ / сутки в этом диапазоне"
-                  value={t.pricePerDay}
-                  onChange={(e) => updateTier(i, 'pricePerDay', e.target.value)}
-                />
+                <input type="number" min="1" placeholder="от, дней" value={t.minDays} onChange={(e) => updateTier(i, 'minDays', e.target.value)} />
+                <input type="number" min="1" placeholder="до, дней (пусто = без ограничения)" value={t.maxDays} onChange={(e) => updateTier(i, 'maxDays', e.target.value)} />
+                <input type="number" min="0" placeholder="₽ / сутки в этом диапазоне" value={t.pricePerDay} onChange={(e) => updateTier(i, 'pricePerDay', e.target.value)} />
                 <button type="button" className="btn btn-outline" onClick={() => removeTier(i)}>×</button>
               </div>
             ))}
@@ -325,7 +330,7 @@ export default function VehiclesAdmin() {
             <th>Машина</th>
             <th>Категория</th>
             <th>Цена/сутки</th>
-            <th>Занята</th>
+            <th>В аренде сейчас</th>
             <th>Стейджи</th>
             <th></th>
           </tr>
@@ -339,15 +344,7 @@ export default function VehiclesAdmin() {
                 <td>{v.brand} {v.model}</td>
                 <td>{categories.find((c) => c.id === v.category_id)?.label || v.category_id}</td>
                 <td className="mono">{v.price_day}</td>
-                <td>
-                  {v.is_rented ? (
-                    <button type="button" className="btn btn-outline" onClick={() => handleToggleRented(v)}>
-                      Освободить
-                    </button>
-                  ) : (
-                    'Нет'
-                  )}
-                </td>
+                <td>{busyUntil[v.id] ? `до ${formatDate(busyUntil[v.id])}` : 'Нет'}</td>
                 <td>
                   {(v.vehicle_stages || []).length === 0
                     ? 'Стоковая'
@@ -359,6 +356,7 @@ export default function VehiclesAdmin() {
                 </td>
                 <td>
                   <button type="button" className="btn btn-outline" onClick={() => startEdit(v)}>Изменить</button>
+                  <button type="button" className="btn btn-outline" onClick={() => startDuplicate(v)}>Дублировать</button>
                   <button type="button" className="btn btn-outline" onClick={() => handleDelete(v.id)}>Удалить</button>
                 </td>
               </tr>

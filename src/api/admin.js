@@ -1,38 +1,37 @@
 const FUNCTIONS_URL = import.meta.env.VITE_SUPABASE_FUNCTIONS_URL
-const TOKEN_KEY = 'far_admin_token'
+const SESSION_KEY = 'far_admin_session'
+
+// session = { token, username, role: 'owner' | 'manager' }
+export function getStoredSession() {
+  try {
+    return JSON.parse(sessionStorage.getItem(SESSION_KEY))
+  } catch {
+    return null
+  }
+}
 
 export function getStoredToken() {
-  return sessionStorage.getItem(TOKEN_KEY)
+  return getStoredSession()?.token || null
 }
 
 export function clearStoredToken() {
-  sessionStorage.removeItem(TOKEN_KEY)
+  sessionStorage.removeItem(SESSION_KEY)
 }
 
-async function sha256Hex(text) {
-  const data = new TextEncoder().encode(text)
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data)
-  return Array.from(new Uint8Array(hashBuffer))
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('')
-}
-
-// Пароль хэшируется в браузере и на сервер уходит только хэш —
-// сам пароль по сети не передаётся.
-export async function login(password) {
-  const passwordHash = await sha256Hex(password)
-
+// Пароль уходит по HTTPS, проверяется на сервере (bcrypt в БД) — не хэш из браузера.
+export async function login(username, password) {
   const res = await fetch(`${FUNCTIONS_URL}/admin-login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ passwordHash }),
+    body: JSON.stringify({ username, password }),
   })
 
   const json = await res.json()
   if (!res.ok) throw new Error(json.error || 'Ошибка входа')
 
-  sessionStorage.setItem(TOKEN_KEY, json.token)
-  return json
+  const session = { token: json.token, username: json.username, role: json.role }
+  sessionStorage.setItem(SESSION_KEY, JSON.stringify(session))
+  return session
 }
 
 export async function callAdminApi(resource, action, payload) {
@@ -44,10 +43,7 @@ export async function callAdminApi(resource, action, payload) {
 
   const res = await fetch(`${FUNCTIONS_URL}/admin-api`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-admin-token': token,
-    },
+    headers: { 'Content-Type': 'application/json', 'x-admin-token': token },
     body: JSON.stringify({ resource, action, payload }),
   })
 
@@ -55,7 +51,6 @@ export async function callAdminApi(resource, action, payload) {
   if (!res.ok) {
     if (res.status === 401) {
       clearStoredToken()
-      // AdminPage слушает это событие и возвращает на экран входа.
       window.dispatchEvent(new Event('far-admin-unauthorized'))
     }
     throw new Error(json.error || 'Ошибка запроса к админ-API')

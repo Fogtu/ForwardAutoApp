@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react'
 import Logo from '../../components/Logo/Logo.jsx'
 import CategoryCard from '../../components/CategoryCard/CategoryCard.jsx'
 import SkeletonCard from '../../components/SkeletonCard/SkeletonCard.jsx'
+import ErrorState from '../../components/ErrorState/ErrorState.jsx'
 import { fetchCategories } from '../../api/categories.js'
 import { fetchVehicleCountsByCategory } from '../../api/vehicles.js'
+import usePageMeta from '../../hooks/usePageMeta.js'
 import './CategoriesPage.css'
 
 const SKELETON_COUNT = 6
@@ -12,10 +14,15 @@ export default function CategoriesPage() {
   const [categories, setCategories] = useState([])
   const [counts, setCounts] = useState({})
   const [loading, setLoading] = useState(true)
-  const [errorMsg, setErrorMsg] = useState(null)
+  const [failed, setFailed] = useState(false)
+  const [reloadKey, setReloadKey] = useState(0)
+
+  usePageMeta()
 
   useEffect(() => {
     let cancelled = false
+    setLoading(true)
+    setFailed(false)
 
     async function load() {
       try {
@@ -25,7 +32,7 @@ export default function CategoriesPage() {
           setCounts(cnts)
         }
       } catch (e) {
-        if (!cancelled) setErrorMsg('Не удалось загрузить категории. Попробуйте обновить страницу.')
+        if (!cancelled) setFailed(true)
       } finally {
         if (!cancelled) setLoading(false)
       }
@@ -35,7 +42,7 @@ export default function CategoriesPage() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [reloadKey])
 
   return (
     <>
@@ -55,9 +62,12 @@ export default function CategoriesPage() {
       <section className="container categories-section">
         <h2 className="categories-section__title">Категории</h2>
 
-        {errorMsg && <p className="mono">{errorMsg}</p>}
-
-        {!errorMsg && (
+        {failed ? (
+          <ErrorState
+            title="Не удалось загрузить категории"
+            onRetry={() => setReloadKey((k) => k + 1)}
+          />
+        ) : (
           <div className="categories-grid">
             {loading
               ? Array.from({ length: SKELETON_COUNT }).map((_, i) => <SkeletonCard key={i} />)

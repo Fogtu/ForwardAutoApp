@@ -1,19 +1,18 @@
 import { useEffect, useState } from 'react'
-import { useParams, Navigate, Link } from 'react-router-dom'
+import { useParams, Link } from 'react-router-dom'
 import Breadcrumbs from '../../components/Breadcrumbs/Breadcrumbs.jsx'
 import SkeletonBookingForm from '../../components/SkeletonBookingForm/SkeletonBookingForm.jsx'
+import AvailabilityCalendar from '../../components/AvailabilityCalendar/AvailabilityCalendar.jsx'
+import ErrorState from '../../components/ErrorState/ErrorState.jsx'
+import NotFoundPage from '../NotFoundPage/NotFoundPage.jsx'
 import { fetchVehicle } from '../../api/vehicles.js'
 import { fetchCategoryById } from '../../api/categories.js'
 import { submitRentalRequest } from '../../api/rentals.js'
 import { formatMoney } from '../../utils/format.js'
 import { daysBetween, pricePerDayFor, totalPriceFor } from '../../utils/pricing.js'
+import { isRangeFree, todayStr } from '../../utils/availability.js'
+import usePageMeta from '../../hooks/usePageMeta.js'
 import './BookingPage.css'
-
-function todayStr() {
-  const d = new Date()
-  const pad = (n) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
-}
 
 function daysWord(n) {
   const m10 = n % 10, m100 = n % 100
@@ -25,8 +24,8 @@ export default function BookingPage() {
   const { vehicleId } = useParams()
   const [vehicle, setVehicle] = useState(null)
   const [category, setCategory] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [notFound, setNotFound] = useState(false)
+  const [status, setStatus] = useState('loading') // loading | ok | notFound | error
+  const [reloadKey, setReloadKey] = useState(0)
 
   const [vkLink, setVkLink] = useState('')
   const [gameNickname, setGameNickname] = useState('')
@@ -35,28 +34,30 @@ export default function BookingPage() {
   const [endDate, setEndDate] = useState(todayStr())
 
   const [submitting, setSubmitting] = useState(false)
-  const [submitted, setSubmitted] = useState(false)
+  const [code, setCode] = useState(null)
   const [error, setError] = useState(null)
+
+  usePageMeta('Заявка на аренду')
 
   useEffect(() => {
     let cancelled = false
+    setStatus('loading')
 
     async function load() {
       try {
         const v = await fetchVehicle(vehicleId)
         if (!v) {
-          if (!cancelled) setNotFound(true)
+          if (!cancelled) setStatus('notFound')
           return
         }
         const cat = await fetchCategoryById(v.category)
         if (!cancelled) {
           setVehicle(v)
           setCategory(cat)
+          setStatus('ok')
         }
       } catch (e) {
-        if (!cancelled) setNotFound(true)
-      } finally {
-        if (!cancelled) setLoading(false)
+        if (!cancelled) setStatus('error')
       }
     }
 
@@ -64,13 +65,23 @@ export default function BookingPage() {
     return () => {
       cancelled = true
     }
-  }, [vehicleId])
+  }, [vehicleId, reloadKey])
 
-  if (notFound) {
-    return <Navigate to="/" replace />
+  if (status === 'notFound') {
+    return <NotFoundPage title="Машина не найдена" text="Заявку на эту машину оформить нельзя — её нет в каталоге." />
   }
 
-  if (loading || !vehicle) {
+  if (status === 'error') {
+    return (
+      <section className="container booking-page">
+        <div className="booking-page__loading">
+          <ErrorState title="Не удалось загрузить форму заявки" onRetry={() => setReloadKey((k) => k + 1)} />
+        </div>
+      </section>
+    )
+  }
+
+  if (status === 'loading' || !vehicle) {
     return (
       <section className="container booking-page">
         <div className="booking-page__loading">
@@ -82,33 +93,9 @@ export default function BookingPage() {
     )
   }
 
-  // Машину уже забронировали, пока мы грузили страницу, или она занята
-  // с самого начала — форму не показываем вовсе.
-  if (vehicle.isRented) {
-    return (
-      <section className="container booking-page">
-        <Breadcrumbs
-          items={[
-            { label: 'Главная', to: '/' },
-            { label: category?.label, to: `/category/${category?.id}` },
-            { label: `${vehicle.brand} ${vehicle.model}`, to: `/car/${vehicle.id}` },
-            { label: 'Заявка на аренду' },
-          ]}
-        />
-        <div className="booking-page__done">
-          <h1>Машина сейчас недоступна</h1>
-          <p>
-            «{vehicle.brand} {vehicle.model}» уже в аренде у другого игрока. Загляните
-            позже — как только машина освободится, бронь снова станет доступна.
-          </p>
-          <Link to={`/car/${vehicle.id}`} className="btn btn-outline">Назад к машине</Link>
-        </div>
-      </section>
-    )
-  }
-
   const days = daysBetween(startDate, endDate)
   const datesValid = days > 0
+  const datesFree = datesValid ? isRangeFree(vehicle.busy, startDate, endDate) : true
   const pricePerDay = datesValid ? pricePerDayFor(days, vehicle.priceTiers, vehicle.priceDay) : vehicle.priceDay
   const price = totalPriceFor(days, vehicle.priceTiers, vehicle.priceDay)
 
@@ -118,11 +105,15 @@ export default function BookingPage() {
       setError('Дата окончания не может быть раньше даты начала')
       return
     }
+    if (!datesFree) {
+      setError('На выбранные даты машина занята — выберите свободные в календаре')
+      return
+    }
     setSubmitting(true)
     setError(null)
     try {
-      await submitRentalRequest({ vehicleId: vehicle.id, vkLink, gameNickname, contactName, startDate, endDate })
-      setSubmitted(true)
+      const res = await submitRentalRequest({ vehicleId: vehicle.id, vkLink, gameNickname, contactName, startDate, endDate })
+      setCode(res.code)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -130,15 +121,18 @@ export default function BookingPage() {
     }
   }
 
-  if (submitted) {
+  if (code) {
     return (
       <section className="container booking-page">
         <div className="booking-page__done">
           <h1>Заявка подана</h1>
           <p>
-            Ваша заявка на аренду «{vehicle.brand} {vehicle.model}» отправлена и будет
-            рассмотрена в течение суток, а часто и быстрее. Мы свяжемся с вами через ВК.
+            Заявка на «{vehicle.brand} {vehicle.model}» отправлена и ждёт решения администратора —
+            обычно в течение суток. Машина закрепится за вами после одобрения. Мы свяжемся с вами через ВК.
           </p>
+          <p>Номер заявки — сохраните его, чтобы проверить статус:</p>
+          <span className="booking-page__code">{code}</span>
+          <Link to={`/status/${code}`} className="btn btn-primary">Проверить статус</Link>
           <Link to={`/car/${vehicle.id}`} className="btn btn-outline">Назад к машине</Link>
         </div>
       </section>
@@ -163,35 +157,17 @@ export default function BookingPage() {
 
           <label className="booking-form__field">
             Ссылка на ВК
-            <input
-              type="url"
-              required
-              placeholder="https://vk.com/id..."
-              value={vkLink}
-              onChange={(e) => setVkLink(e.target.value)}
-            />
+            <input type="url" required placeholder="https://vk.com/id..." value={vkLink} onChange={(e) => setVkLink(e.target.value)} />
           </label>
 
           <label className="booking-form__field">
             Игровое имя
-            <input
-              type="text"
-              required
-              placeholder="Ник в игре"
-              value={gameNickname}
-              onChange={(e) => setGameNickname(e.target.value)}
-            />
+            <input type="text" required placeholder="Ник в игре" value={gameNickname} onChange={(e) => setGameNickname(e.target.value)} />
           </label>
 
           <label className="booking-form__field">
             Как к вам обращаться
-            <input
-              type="text"
-              required
-              placeholder="Имя"
-              value={contactName}
-              onChange={(e) => setContactName(e.target.value)}
-            />
+            <input type="text" required placeholder="Имя" value={contactName} onChange={(e) => setContactName(e.target.value)} />
           </label>
 
           <div className="booking-form__dates">
@@ -210,15 +186,17 @@ export default function BookingPage() {
             </label>
             <label className="booking-form__field">
               По какую дату
-              <input
-                type="date"
-                required
-                min={startDate}
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-              />
+              <input type="date" required min={startDate} value={endDate} onChange={(e) => setEndDate(e.target.value)} />
             </label>
           </div>
+
+          <AvailabilityCalendar busy={vehicle.busy} selected={datesValid ? { start: startDate, end: endDate } : undefined} />
+
+          {!datesFree && (
+            <p className="booking-form__conflict">
+              На эти даты машина уже занята. Выберите свободные дни — занятые перечёркнуты в календаре.
+            </p>
+          )}
 
           {datesValid ? (
             <div className="booking-form__price-breakdown">
@@ -240,7 +218,7 @@ export default function BookingPage() {
 
           {error && <p className="booking-form__error">{error}</p>}
 
-          <button type="submit" className="btn btn-primary" disabled={submitting || !datesValid}>
+          <button type="submit" className="btn btn-primary" disabled={submitting || !datesValid || !datesFree}>
             {submitting ? 'Отправляем…' : 'Отправить заявку'}
           </button>
         </form>
